@@ -2,7 +2,6 @@ const express = require('express');
 const cors    = require('cors');
 const dotenv  = require('dotenv');
 dotenv.config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // TODO: remove before production — disables TLS cert validation
 
 const { sequelize } = require('./models');
 
