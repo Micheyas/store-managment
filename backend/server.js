@@ -7,7 +7,10 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // TODO: remove before productio
 const { sequelize } = require('./models');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
+  credentials: true,
+}));
 app.use(express.json());
 
 // Routes
