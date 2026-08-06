@@ -38,7 +38,7 @@ export default function Reports() {
     }
   };
 
-  useEffect(() => { fetchAll(); }, [dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchAll(); }, [dateFrom, dateTo]); // eslint-disable-line
 
   return (
     <div className="page">
