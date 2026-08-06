@@ -7,7 +7,20 @@ const { sequelize } = require('./models');
 
 const app = express();
 app.use(cors({
-  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile, curl, etc.)
+    if (!origin) return callback(null, true);
+    const allowed = (process.env.FRONTEND_URL || '').split(',').map(u => u.trim());
+    // Always allow vercel.app domains and localhost
+    if (
+      allowed.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost')
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(express.json());
