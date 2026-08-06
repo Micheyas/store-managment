@@ -11,6 +11,7 @@ const PurchaseItem  = require('./PurchaseItem');
 const Sale       = require('./Sale');
 const SaleItem   = require('./SaleItem');
 const Currency   = require('./Currency');
+const PendingAction = require('./PendingAction');
 
 // ── Branch ↔ User ──────────────────────────────────────────────────────────
 Branch.hasMany(User, { foreignKey: 'branchId', as: 'users' });
@@ -64,10 +65,16 @@ SaleItem.belongsTo(Sale, { foreignKey: 'saleId', as: 'sale' });
 Product.hasMany(SaleItem, { foreignKey: 'productId', as: 'saleItems' });
 SaleItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
 
+// ── PendingAction ──────────────────────────────────────────────────────────
+User.hasMany(PendingAction, { foreignKey: 'submittedBy', as: 'submittedActions' });
+PendingAction.belongsTo(User, { foreignKey: 'submittedBy', as: 'submitter' });
+User.hasMany(PendingAction, { foreignKey: 'reviewedBy', as: 'reviewedActions' });
+PendingAction.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
+
 module.exports = {
   sequelize,
   Branch, User, Category, Supplier,
   Product, Stock, StockMovement,
   PurchaseOrder, PurchaseItem,
-  Sale, SaleItem, Currency,
+  Sale, SaleItem, Currency, PendingAction,
 };

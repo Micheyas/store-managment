@@ -170,15 +170,30 @@ export default function Settings() {
       {/* Currencies */}
       {tab === 'currencies' && (
         <div className="card">
-          <h3>💱 Exchange Rates (vs ETB)</h3>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <h3 style={{margin:0}}>💱 Exchange Rates (vs ETB)</h3>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                setError('');
+                try {
+                  const r = await api.post('/currency/refresh-rates');
+                  alert(`✅ ${r.data.message}\nLast updated: ${r.data.timestamp}`);
+                  fetchAll();
+                } catch(e) { setError(e.response?.data?.error || 'Failed to fetch live rates'); }
+              }}
+            >
+              🔄 Fetch Live Rates
+            </button>
+          </div>
           <table className="table mt-2">
-            <thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Rate</th><th>Base</th><th>Update</th></tr></thead>
+            <thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Rate (per 1 ETB)</th><th>Base</th><th>Manual Update</th></tr></thead>
             <tbody>{currencies.map(c => (
               <tr key={c.id}>
                 <td><strong>{c.code}</strong></td>
                 <td>{c.name}</td>
                 <td>{c.symbol}</td>
-                <td>{c.rate}</td>
+                <td>{Number(c.rate).toFixed(6)}</td>
                 <td>{c.isBase ? '✅' : ''}</td>
                 <td><RateInput id={c.id} defaultRate={c.rate} onSave={handleUpdateRate} /></td>
               </tr>

@@ -22,6 +22,7 @@ app.use('/api/purchases',  require('./routes/purchases'));
 app.use('/api/sales',      require('./routes/sales'));
 app.use('/api/currency',   require('./routes/currency'));
 app.use('/api/reports',    require('./routes/reports'));
+app.use('/api/approvals',  require('./routes/approvals'));
 
 app.get('/', (req, res) => res.json({ message: 'Store Management API running' }));
 
@@ -43,6 +44,28 @@ sequelize.sync({ alter: false }).then(async () => {
   await addColIfMissing('Products','image',             { type: DataTypes.STRING,  allowNull: true });
   await addColIfMissing('Products','costPrice',         { type: DataTypes.DECIMAL(14,2), defaultValue: 0 });
   await addColIfMissing('Products','lowStockThreshold', { type: DataTypes.DECIMAL(12,3), defaultValue: 10 });
+
+  // Add 'it' to Users role ENUM (PostgreSQL)
+  try {
+    await sequelize.query(`ALTER TYPE "enum_Users_role" ADD VALUE IF NOT EXISTS 'it'`);
+  } catch (_) {}
+
+  // Create PendingActions table if missing
+  await sequelize.sync({ force: false, alter: false });
+  try {
+    await sequelize.getQueryInterface().createTable('PendingActions', {
+      id:          { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+      type:        { type: DataTypes.STRING,  allowNull: false },
+      payload:     { type: DataTypes.JSONB,   allowNull: false },
+      submittedBy: { type: DataTypes.INTEGER, allowNull: false },
+      status:      { type: DataTypes.STRING,  defaultValue: 'pending' },
+      reviewedBy:  { type: DataTypes.INTEGER, allowNull: true },
+      reviewNote:  { type: DataTypes.TEXT,    allowNull: true },
+      reviewedAt:  { type: DataTypes.DATE,    allowNull: true },
+      createdAt:   { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
+      updatedAt:   { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
+    });
+  } catch (_) {} // already exists
 
   // Seed initial data
   const bcrypt = require('bcryptjs');

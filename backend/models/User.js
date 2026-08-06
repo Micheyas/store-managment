@@ -7,7 +7,7 @@ const User = sequelize.define('User', {
   email:    { type: DataTypes.STRING,  allowNull: false, unique: true },
   password: { type: DataTypes.STRING,  allowNull: false },
   role: {
-    type: DataTypes.ENUM('superadmin', 'admin', 'warehouse', 'cashier'),
+    type: DataTypes.ENUM('superadmin', 'admin', 'it', 'warehouse', 'cashier'),
     defaultValue: 'cashier',
   },
   branchId: { type: DataTypes.INTEGER, allowNull: true },

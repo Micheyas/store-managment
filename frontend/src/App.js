@@ -3,15 +3,17 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import Layout from './components/Layout';
 
-import Login         from './pages/Login';
-import Dashboard     from './pages/Dashboard';
-import Products      from './pages/Products';
-import Stock         from './pages/Stock';
-import POS           from './pages/POS';
+import Login          from './pages/Login';
+import Dashboard      from './pages/Dashboard';
+import Products       from './pages/Products';
+import Stock          from './pages/Stock';
+import POS            from './pages/POS';
 import PurchaseOrders from './pages/PurchaseOrders';
-import Suppliers     from './pages/Suppliers';
-import Reports       from './pages/Reports';
-import Settings      from './pages/Settings';
+import Suppliers      from './pages/Suppliers';
+import Reports        from './pages/Reports';
+import Settings       from './pages/Settings';
+import ITManagement   from './pages/ITManagement';
+import Approvals      from './pages/Approvals';
 import './styles/App.css';
 
 function ProtectedRoute({ children, roles }) {
@@ -29,13 +31,15 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
-        <Route path="products"  element={<ProtectedRoute roles={['superadmin','admin','warehouse','cashier']}><Products /></ProtectedRoute>} />
+        <Route path="products"  element={<ProtectedRoute roles={['superadmin','admin','warehouse','cashier','it']}><Products /></ProtectedRoute>} />
         <Route path="stock"     element={<ProtectedRoute roles={['superadmin','admin','warehouse']}><Stock /></ProtectedRoute>} />
         <Route path="pos"       element={<POS />} />
         <Route path="purchases" element={<ProtectedRoute roles={['superadmin','admin','warehouse']}><PurchaseOrders /></ProtectedRoute>} />
         <Route path="suppliers" element={<ProtectedRoute roles={['superadmin','admin']}><Suppliers /></ProtectedRoute>} />
         <Route path="reports"   element={<ProtectedRoute roles={['superadmin','admin']}><Reports /></ProtectedRoute>} />
         <Route path="settings"  element={<ProtectedRoute roles={['superadmin','admin']}><Settings /></ProtectedRoute>} />
+        <Route path="it"        element={<ProtectedRoute roles={['it']}><ITManagement /></ProtectedRoute>} />
+        <Route path="approvals" element={<ProtectedRoute roles={['superadmin']}><Approvals /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

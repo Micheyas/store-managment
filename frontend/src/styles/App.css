@@ -192,3 +192,9 @@ a{text-decoration:none;color:inherit}
   .form-grid{grid-template-columns:1fr}
   .stat-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ── IT / Approvals ─────────────────────────────── */
+.nav-badge{background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
+.topbar-badge{background:#f59e0b;color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;margin-right:12px}
+.topbar-badge:hover{background:#d97706}
+.topbar-right{display:flex;align-items:center;gap:8px}
