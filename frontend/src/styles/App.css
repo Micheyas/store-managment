@@ -198,3 +198,12 @@ a{text-decoration:none;color:inherit}
 .topbar-badge{background:#f59e0b;color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;margin-right:12px}
 .topbar-badge:hover{background:#d97706}
 .topbar-right{display:flex;align-items:center;gap:8px}
+
+/* ── Login demo accounts table ──────────────────── */
+.login-demo{margin-top:20px;padding-top:16px;border-top:1px solid #e5e7eb}
+.login-demo-title{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:8px;text-align:center}
+.login-demo-table{width:100%;border-collapse:collapse;font-size:12px}
+.login-demo-table th{text-align:left;padding:4px 6px;color:#9ca3af;font-weight:600;border-bottom:1px solid #f3f4f6}
+.login-demo-table td{padding:5px 6px;border-bottom:1px solid #f9fafb}
+.login-demo-table tr:last-child td{border-bottom:none}
+.login-demo-table code{background:#f3f4f6;padding:1px 5px;border-radius:4px;font-size:11px}

@@ -47,7 +47,34 @@ export default function Login() {
         </form>
 
         <div className="login-demo">
-          <p><strong>Demo:</strong> admin@store.com / admin123</p>
+          <p className="login-demo-title">🔑 Demo Accounts</p>
+          <table className="login-demo-table">
+            <thead>
+              <tr><th>Role</th><th>Email</th><th>Password</th><th></th></tr>
+            </thead>
+            <tbody>
+              {[
+                { role: '👑 Owner',   email: 'admin@store.com',   password: 'admin123' },
+                { role: '🔧 Manager', email: 'manager@store.com', password: 'manager123' },
+                { role: '🛒 Cashier', email: 'cashier@store.com', password: 'cashier123' },
+              ].map(a => (
+                <tr key={a.email}>
+                  <td>{a.role}</td>
+                  <td><code>{a.email}</code></td>
+                  <td><code>{a.password}</code></td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline"
+                      onClick={() => { setEmail(a.email); setPassword(a.password); }}
+                    >
+                      Use
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

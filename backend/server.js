@@ -119,9 +119,22 @@ sequelize.sync({ alter: false }).then(async () => {
     });
     console.log('✅ Seeded owner: admin@store.com / admin123');
   } else if (existing.role === 'superadmin') {
-    // Migrate legacy superadmin → owner
     await existing.update({ role: 'owner' });
     console.log('✅ Migrated superadmin → owner');
+  }
+
+  // Seed demo manager
+  const mgr = await User.findOne({ where: { email: 'manager@store.com' } });
+  if (!mgr) {
+    await User.create({ name: 'Demo Manager', email: 'manager@store.com', password: await bcrypt.hash('manager123', 10), role: 'manager', branchId: branch.id, isActive: true });
+    console.log('✅ Seeded manager: manager@store.com / manager123');
+  }
+
+  // Seed demo cashier
+  const csh = await User.findOne({ where: { email: 'cashier@store.com' } });
+  if (!csh) {
+    await User.create({ name: 'Demo Cashier', email: 'cashier@store.com', password: await bcrypt.hash('cashier123', 10), role: 'cashier', branchId: branch.id, isActive: true });
+    console.log('✅ Seeded cashier: cashier@store.com / cashier123');
   }
 
   // Seed currencies
