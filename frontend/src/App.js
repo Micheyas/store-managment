@@ -14,6 +14,8 @@ import Reports        from './pages/Reports';
 import Settings       from './pages/Settings';
 import ITManagement   from './pages/ITManagement';
 import Approvals      from './pages/Approvals';
+import Expenses       from './pages/Expenses';
+import ActivityLog    from './pages/ActivityLog';
 import './styles/App.css';
 
 function ProtectedRoute({ children, roles }) {
@@ -31,15 +33,21 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
-        <Route path="products"  element={<ProtectedRoute roles={['superadmin','admin','warehouse','cashier','it']}><Products /></ProtectedRoute>} />
-        <Route path="stock"     element={<ProtectedRoute roles={['superadmin','admin','warehouse']}><Stock /></ProtectedRoute>} />
+        {/* All roles can see products (cashier read-only enforced by backend) */}
+        <Route path="products"  element={<Products />} />
+        {/* Cashier blocked from stock/purchases/suppliers/reports */}
+        <Route path="stock"     element={<ProtectedRoute roles={['owner','manager']}><Stock /></ProtectedRoute>} />
         <Route path="pos"       element={<POS />} />
-        <Route path="purchases" element={<ProtectedRoute roles={['superadmin','admin','warehouse']}><PurchaseOrders /></ProtectedRoute>} />
-        <Route path="suppliers" element={<ProtectedRoute roles={['superadmin','admin']}><Suppliers /></ProtectedRoute>} />
-        <Route path="reports"   element={<ProtectedRoute roles={['superadmin','admin']}><Reports /></ProtectedRoute>} />
-        <Route path="settings"  element={<ProtectedRoute roles={['superadmin','admin']}><Settings /></ProtectedRoute>} />
+        <Route path="purchases" element={<ProtectedRoute roles={['owner','manager']}><PurchaseOrders /></ProtectedRoute>} />
+        <Route path="suppliers" element={<ProtectedRoute roles={['owner','manager']}><Suppliers /></ProtectedRoute>} />
+        <Route path="reports"   element={<ProtectedRoute roles={['owner','manager']}><Reports /></ProtectedRoute>} />
+        <Route path="settings"  element={<ProtectedRoute roles={['owner','manager']}><Settings /></ProtectedRoute>} />
+        {/* Owner only */}
+        <Route path="expenses"  element={<ProtectedRoute roles={['owner','manager']}><Expenses /></ProtectedRoute>} />
+        <Route path="activity"  element={<ProtectedRoute roles={['owner','manager']}><ActivityLog /></ProtectedRoute>} />
+        <Route path="approvals" element={<ProtectedRoute roles={['owner']}><Approvals /></ProtectedRoute>} />
+        {/* IT */}
         <Route path="it"        element={<ProtectedRoute roles={['it']}><ITManagement /></ProtectedRoute>} />
-        <Route path="approvals" element={<ProtectedRoute roles={['superadmin']}><Approvals /></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

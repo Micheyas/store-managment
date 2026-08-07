@@ -4,7 +4,7 @@ const { Op, fn, col, literal } = require('sequelize');
 // Dashboard summary
 exports.getDashboard = async (req, res) => {
   try {
-    const branchId = req.user.role === 'superadmin' ? null : req.user.branchId;
+    const branchId = req.user.role === 'owner' ? null : req.user.branchId;
     const where = branchId ? { branchId } : {};
     const today = new Date(); today.setHours(0,0,0,0);
 
@@ -30,7 +30,7 @@ exports.getSalesReport = async (req, res) => {
     const { dateFrom, dateTo, branchId, groupBy = 'day' } = req.query;
     const where = { status: 'completed' };
     if (branchId) where.branchId = branchId;
-    else if (req.user.role !== 'superadmin') where.branchId = req.user.branchId;
+    else if (req.user.role !== 'owner') where.branchId = req.user.branchId;
     if (dateFrom) where.createdAt = { [Op.gte]: new Date(dateFrom) };
     if (dateTo)   where.createdAt = { ...where.createdAt, [Op.lte]: new Date(dateTo + 'T23:59:59') };
 
@@ -56,7 +56,7 @@ exports.getTopProducts = async (req, res) => {
     const { dateFrom, dateTo, branchId, limit = 10 } = req.query;
     const saleWhere = { status: 'completed' };
     if (branchId) saleWhere.branchId = branchId;
-    else if (req.user.role !== 'superadmin') saleWhere.branchId = req.user.branchId;
+    else if (req.user.role !== 'owner') saleWhere.branchId = req.user.branchId;
     if (dateFrom) saleWhere.createdAt = { [Op.gte]: new Date(dateFrom) };
     if (dateTo)   saleWhere.createdAt = { ...saleWhere.createdAt, [Op.lte]: new Date(dateTo + 'T23:59:59') };
 
@@ -85,7 +85,7 @@ exports.getProfitLoss = async (req, res) => {
     const { dateFrom, dateTo, branchId } = req.query;
     const saleWhere = { status: 'completed' };
     if (branchId) saleWhere.branchId = branchId;
-    else if (req.user.role !== 'superadmin') saleWhere.branchId = req.user.branchId;
+    else if (req.user.role !== 'owner') saleWhere.branchId = req.user.branchId;
     if (dateFrom) saleWhere.createdAt = { [Op.gte]: new Date(dateFrom) };
     if (dateTo)   saleWhere.createdAt = { ...saleWhere.createdAt, [Op.lte]: new Date(dateTo + 'T23:59:59') };
 
@@ -108,5 +108,29 @@ exports.getProfitLoss = async (req, res) => {
       grossProfit: totalRevenue - totalCost,
       margin: totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue * 100).toFixed(2) : 0,
     });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+};
+
+// Expense summary for profit/loss enrichment (owner only)
+exports.getExpenseSummary = async (req, res) => {
+  try {
+    const { dateFrom, dateTo, branchId } = req.query;
+    const { Expense } = require('../models');
+    const { Op } = require('sequelize');
+    const where = {};
+    if (branchId) where.branchId = branchId;
+    else if (req.user.role !== 'owner') where.branchId = req.user.branchId;
+    if (dateFrom || dateTo) {
+      where.expenseDate = {};
+      if (dateFrom) where.expenseDate[Op.gte] = dateFrom;
+      if (dateTo)   where.expenseDate[Op.lte] = dateTo;
+    }
+    const expenses = await Expense.findAll({ where });
+    const total = expenses.reduce((s, e) => s + parseFloat(e.amount), 0);
+    const byCategory = {};
+    for (const e of expenses) {
+      byCategory[e.category] = (byCategory[e.category] || 0) + parseFloat(e.amount);
+    }
+    res.json({ total, byCategory, count: expenses.length });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

@@ -12,6 +12,8 @@ const Sale       = require('./Sale');
 const SaleItem   = require('./SaleItem');
 const Currency   = require('./Currency');
 const PendingAction = require('./PendingAction');
+const Expense    = require('./Expense');
+const ActivityLog = require('./ActivityLog');
 
 // ── Branch ↔ User ──────────────────────────────────────────────────────────
 Branch.hasMany(User, { foreignKey: 'branchId', as: 'users' });
@@ -71,10 +73,21 @@ PendingAction.belongsTo(User, { foreignKey: 'submittedBy', as: 'submitter' });
 User.hasMany(PendingAction, { foreignKey: 'reviewedBy', as: 'reviewedActions' });
 PendingAction.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 
+// ── Expense ────────────────────────────────────────────────────────────────
+User.hasMany(Expense,   { foreignKey: 'userId',   as: 'expenses' });
+Expense.belongsTo(User, { foreignKey: 'userId',   as: 'recordedBy' });
+Branch.hasMany(Expense, { foreignKey: 'branchId', as: 'expenses' });
+Expense.belongsTo(Branch, { foreignKey: 'branchId', as: 'branch' });
+
+// ── ActivityLog ────────────────────────────────────────────────────────────
+User.hasMany(ActivityLog,   { foreignKey: 'userId', as: 'activityLogs' });
+ActivityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
   sequelize,
   Branch, User, Category, Supplier,
   Product, Stock, StockMovement,
   PurchaseOrder, PurchaseItem,
   Sale, SaleItem, Currency, PendingAction,
+  Expense, ActivityLog,
 };

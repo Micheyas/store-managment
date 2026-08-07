@@ -10,7 +10,7 @@ export default function Settings() {
   const [currencies, setCurrencies] = useState([]);
   const [categories, setCategories] = useState([]);
   const [bForm, setBForm]           = useState({ name:'', location:'', phone:'', email:'' });
-  const [uForm, setUForm]           = useState({ name:'', email:'', password:'', role:'cashier', branchId:'' });
+  const [uForm, setUForm] = useState({ name:'', email:'', password:'', role:'cashier', branchId:'' });
   const [catForm, setCatForm]       = useState({ name:'', color:'#6366f1' });
   const [pwForm, setPwForm]         = useState({ currentPassword:'', newPassword:'', confirmPassword:'' });
   const [error, setError]           = useState('');
@@ -92,7 +92,7 @@ export default function Settings() {
       {/* Branches */}
       {tab === 'branches' && (
         <div className="settings-section">
-          {can('superadmin') && (
+          {can('owner') && (
             <form onSubmit={handleAddBranch} className="card form-grid mb-3">
               <h3 className="field-full">Add Branch</h3>
               {[['Name *','name','text',true],['Location','location','text',false],['Phone','phone','tel',false],['Email','email','email',false]].map(([l,k,t,r]) => (
@@ -110,7 +110,7 @@ export default function Settings() {
                   <td>{b.location||'—'}</td>
                   <td>{b.phone||'—'}</td>
                   <td><span className={`badge badge-${b.isActive?'success':'danger'}`}>{b.isActive?'Active':'Inactive'}</span></td>
-                  {can('superadmin') && (
+                  {can('owner') && (
                     <td>
                       <button className={`btn btn-sm ${b.isActive ? 'btn-danger' : 'btn-outline'}`} onClick={() => handleToggleBranch(b)}>
                         {b.isActive ? 'Deactivate' : 'Activate'}
@@ -134,7 +134,7 @@ export default function Settings() {
             ))}
             <div className="field"><label>Role</label>
               <select value={uForm.role} onChange={e => setUForm(p=>({...p,role:e.target.value}))}>
-                {['superadmin','admin','warehouse','cashier'].map(r => <option key={r} value={r}>{r}</option>)}
+                {['owner','manager','cashier','it'].map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div className="field"><label>Branch</label>

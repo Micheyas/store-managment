@@ -59,7 +59,46 @@ export default function POS() {
   const totalAmount = Math.max(0, subtotal - parseFloat(discount || 0));
   const change      = parseFloat(amountPaid || 0) - totalAmount;
 
-  const handleCheckout = async () => {
+  const printReceipt = (sale) => {
+    const w = window.open('', '_blank', 'width=400,height=600');
+    const items = sale.items || cart.map(i => ({ name: i.name, quantity: i.qty, unitPrice: i.unitPrice, subtotal: i.subtotal }));
+    w.document.write(`
+      <html><head><title>Receipt</title>
+      <style>
+        body{font-family:monospace;font-size:13px;padding:16px;max-width:320px;margin:0 auto}
+        h2{text-align:center;margin:0 0 4px}
+        p{text-align:center;margin:2px 0;color:#555}
+        hr{border:none;border-top:1px dashed #999;margin:8px 0}
+        table{width:100%;border-collapse:collapse}
+        td{padding:3px 0}
+        .right{text-align:right}
+        .total{font-weight:bold;font-size:15px}
+        .footer{text-align:center;margin-top:12px;color:#777;font-size:11px}
+      </style></head><body>
+      <h2>🏪 StoreMS</h2>
+      <p>${sale.branch?.name || user?.branch?.name || ''}</p>
+      <p>Invoice: <strong>${sale.invoiceNumber}</strong></p>
+      <p>${new Date(sale.createdAt || Date.now()).toLocaleString()}</p>
+      <p>Cashier: ${sale.cashier?.name || user?.name}</p>
+      <hr/>
+      <table>
+        <tr><td><b>Item</b></td><td class="right"><b>Qty</b></td><td class="right"><b>Price</b></td></tr>
+        <tr><td colspan="3"><hr/></td></tr>
+        ${items.map(i => `<tr><td>${i.name||i.product?.name}</td><td class="right">${i.quantity||i.qty}</td><td class="right">${Number(i.subtotal).toLocaleString()}</td></tr>`).join('')}
+        <tr><td colspan="3"><hr/></td></tr>
+        <tr><td>Subtotal</td><td></td><td class="right">${Number(sale.subtotal||subtotal).toLocaleString()}</td></tr>
+        ${parseFloat(sale.discount||discount)>0?`<tr><td>Discount</td><td></td><td class="right">-${Number(sale.discount||discount).toLocaleString()}</td></tr>`:''}
+        <tr class="total"><td>TOTAL</td><td></td><td class="right">${Number(sale.totalAmount||totalAmount).toLocaleString()} ETB</td></tr>
+        ${parseFloat(sale.amountPaid||amountPaid)>0?`<tr><td>Paid</td><td></td><td class="right">${Number(sale.amountPaid||amountPaid).toLocaleString()}</td></tr>`:''}
+        ${parseFloat(sale.change||Math.max(0,change))>0?`<tr><td>Change</td><td></td><td class="right">${Number(sale.change||Math.max(0,change)).toLocaleString()}</td></tr>`:''}
+      </table>
+      <hr/>
+      <div class="footer">Payment: ${(sale.paymentMethod||payMethod).toUpperCase()}<br/>Thank you for your purchase!</div>
+      </body></html>
+    `);
+    w.document.close();
+    w.print();
+  };
     if (cart.length === 0) return;
     setProcessing(true); setError('');
     try {
@@ -73,6 +112,7 @@ export default function POS() {
         notes: '',
       });
       setLastSale(res.data);
+      printReceipt(res.data);
       setCart([]);
       setDiscount(0);
       setAmountPaid('');
@@ -108,6 +148,7 @@ export default function POS() {
         {lastSale && (
           <div className="alert alert-success">
             ✅ Sale #{lastSale.invoiceNumber} completed!
+            <button className="btn btn-sm ml-2" onClick={() => printReceipt(lastSale)}>🖨️ Reprint</button>
             <button className="btn btn-sm ml-2" onClick={() => setLastSale(null)}>Clear</button>
           </div>
         )}

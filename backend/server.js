@@ -23,6 +23,8 @@ app.use('/api/sales',      require('./routes/sales'));
 app.use('/api/currency',   require('./routes/currency'));
 app.use('/api/reports',    require('./routes/reports'));
 app.use('/api/approvals',  require('./routes/approvals'));
+app.use('/api/expenses',   require('./routes/expenses'));
+app.use('/api/activity',   require('./routes/activity'));
 
 app.get('/', (req, res) => res.json({ message: 'Store Management API running' }));
 
@@ -35,23 +37,23 @@ sequelize.sync({ alter: false }).then(async () => {
   console.log('✅ Database synced');
   const { DataTypes } = require('sequelize');
 
-  // Safe migrations
-  await addColIfMissing('Stocks',  'lowStockThreshold', { type: DataTypes.DECIMAL(12,3), defaultValue: 10 });
-  await addColIfMissing('Users',   'branchId',          { type: DataTypes.INTEGER, allowNull: true });
-  await addColIfMissing('Users',   'isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
-  await addColIfMissing('Branches','isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
-  await addColIfMissing('Products','isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
-  await addColIfMissing('Products','image',             { type: DataTypes.STRING,  allowNull: true });
-  await addColIfMissing('Products','costPrice',         { type: DataTypes.DECIMAL(14,2), defaultValue: 0 });
-  await addColIfMissing('Products','lowStockThreshold', { type: DataTypes.DECIMAL(12,3), defaultValue: 10 });
+  // Safe column migrations
+  await addColIfMissing('Stocks',   'lowStockThreshold', { type: DataTypes.DECIMAL(12,3), defaultValue: 10 });
+  await addColIfMissing('Users',    'branchId',          { type: DataTypes.INTEGER, allowNull: true });
+  await addColIfMissing('Users',    'isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
+  await addColIfMissing('Branches', 'isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
+  await addColIfMissing('Products', 'isActive',          { type: DataTypes.BOOLEAN, defaultValue: true });
+  await addColIfMissing('Products', 'image',             { type: DataTypes.STRING,  allowNull: true });
+  await addColIfMissing('Products', 'costPrice',         { type: DataTypes.DECIMAL(14,2), defaultValue: 0 });
+  await addColIfMissing('Products', 'lowStockThreshold', { type: DataTypes.DECIMAL(12,3), defaultValue: 10 });
 
-  // Add 'it' to Users role ENUM (PostgreSQL)
-  try {
-    await sequelize.query(`ALTER TYPE "enum_Users_role" ADD VALUE IF NOT EXISTS 'it'`);
-  } catch (_) {}
+  // Add new role values to ENUM (PostgreSQL)
+  const newRoles = ['it', 'owner', 'manager'];
+  for (const role of newRoles) {
+    try { await sequelize.query(`ALTER TYPE "enum_Users_role" ADD VALUE IF NOT EXISTS '${role}'`); } catch (_) {}
+  }
 
   // Create PendingActions table if missing
-  await sequelize.sync({ force: false, alter: false });
   try {
     await sequelize.getQueryInterface().createTable('PendingActions', {
       id:          { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -65,41 +67,81 @@ sequelize.sync({ alter: false }).then(async () => {
       createdAt:   { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
       updatedAt:   { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
     });
-  } catch (_) {} // already exists
+  } catch (_) {}
+
+  // Create Expenses table if missing
+  try {
+    await sequelize.getQueryInterface().createTable('Expenses', {
+      id:            { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+      title:         { type: DataTypes.STRING,  allowNull: false },
+      amount:        { type: DataTypes.DECIMAL(14,2), allowNull: false },
+      category:      { type: DataTypes.STRING,  defaultValue: 'other' },
+      paymentMethod: { type: DataTypes.STRING,  defaultValue: 'cash' },
+      branchId:      { type: DataTypes.INTEGER, allowNull: true },
+      userId:        { type: DataTypes.INTEGER, allowNull: false },
+      note:          { type: DataTypes.TEXT,    allowNull: true },
+      expenseDate:   { type: DataTypes.DATEONLY, allowNull: false },
+      createdAt:     { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
+      updatedAt:     { type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
+    });
+  } catch (_) {}
+
+  // Create ActivityLogs table if missing
+  try {
+    await sequelize.getQueryInterface().createTable('ActivityLogs', {
+      id:       { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+      userId:   { type: DataTypes.INTEGER, allowNull: false },
+      action:   { type: DataTypes.STRING,  allowNull: false },
+      entity:   { type: DataTypes.STRING,  allowNull: true },
+      entityId: { type: DataTypes.INTEGER, allowNull: true },
+      detail:   { type: DataTypes.TEXT,    allowNull: true },
+      ip:       { type: DataTypes.STRING,  allowNull: true },
+      createdAt:{ type: DataTypes.DATE,    allowNull: false, defaultValue: DataTypes.NOW },
+    });
+  } catch (_) {}
 
   // Seed initial data
   const bcrypt = require('bcryptjs');
   const { Branch, User, Currency, Category } = require('./models');
 
-  // Seed default branch
-  let [branch] = await Branch.findOrCreate({ where: { name: 'Main Branch' }, defaults: { name: 'Main Branch', location: 'HQ', isActive: true } });
+  let [branch] = await Branch.findOrCreate({
+    where: { name: 'Main Branch' },
+    defaults: { name: 'Main Branch', location: 'HQ', isActive: true },
+  });
 
-  // Seed superadmin
+  // Seed owner account (was superadmin)
   const existing = await User.findOne({ where: { email: 'admin@store.com' } });
   if (!existing) {
-    await User.create({ name: 'Super Admin', email: 'admin@store.com', password: await bcrypt.hash('admin123', 10), role: 'superadmin', branchId: branch.id, isActive: true });
-    console.log('✅ Seeded superadmin: admin@store.com / admin123');
+    await User.create({
+      name: 'Store Owner', email: 'admin@store.com',
+      password: await bcrypt.hash('admin123', 10),
+      role: 'owner', branchId: branch.id, isActive: true,
+    });
+    console.log('✅ Seeded owner: admin@store.com / admin123');
+  } else if (existing.role === 'superadmin') {
+    // Migrate legacy superadmin → owner
+    await existing.update({ role: 'owner' });
+    console.log('✅ Migrated superadmin → owner');
   }
 
   // Seed currencies
   const currencies = [
-    { code: 'ETB', name: 'Ethiopian Birr',  symbol: 'Br',  rate: 1,      isBase: true  },
-    { code: 'USD', name: 'US Dollar',        symbol: '$',   rate: 0.0071, isBase: false },
-    { code: 'EUR', name: 'Euro',             symbol: '€',   rate: 0.0065, isBase: false },
-    { code: 'GBP', name: 'British Pound',    symbol: '£',   rate: 0.0056, isBase: false },
+    { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br', rate: 1,      isBase: true  },
+    { code: 'USD', name: 'US Dollar',       symbol: '$',  rate: 0.0071, isBase: false },
+    { code: 'EUR', name: 'Euro',            symbol: '€',  rate: 0.0065, isBase: false },
+    { code: 'GBP', name: 'British Pound',   symbol: '£',  rate: 0.0056, isBase: false },
   ];
   for (const cur of currencies) {
     await Currency.findOrCreate({ where: { code: cur.code }, defaults: cur });
   }
 
   // Seed categories
-  const cats = ['Electronics', 'Clothing', 'Food & Beverages', 'Health & Beauty', 'Home & Kitchen', 'Tools & Hardware', 'Other'];
+  const cats = ['Electronics','Clothing','Food & Beverages','Health & Beauty','Home & Kitchen','Tools & Hardware','Other'];
   for (const name of cats) {
     await Category.findOrCreate({ where: { name } });
   }
 
   console.log('✅ Initial data seeded');
-
   const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 });

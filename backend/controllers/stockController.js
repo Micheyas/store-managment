@@ -119,7 +119,7 @@ exports.getMovements = async (req, res) => {
     const { branchId, productId, type, dateFrom, dateTo, page = 1, limit = 50 } = req.query;
     const where = {};
     if (branchId) where.branchId = branchId;
-    else if (req.user.role !== 'superadmin') where.branchId = req.user.branchId;
+    else if (req.user.role !== 'owner') where.branchId = req.user.branchId;
     if (productId) where.productId = productId;
     if (type) where.type = type;
     if (dateFrom || dateTo) {
@@ -145,7 +145,7 @@ exports.getMovements = async (req, res) => {
 // Low stock alerts across all branches (superadmin) or one branch
 exports.getLowStock = async (req, res) => {
   try {
-    const branchWhere = req.user.role === 'superadmin' ? {} : { branchId: req.user.branchId };
+    const branchWhere = req.user.role === 'owner' ? {} : { branchId: req.user.branchId };
     const stock = await Stock.findAll({
       where: { ...branchWhere, quantity: { [Op.lte]: sequelize.col('lowStockThreshold') } },
       include: [

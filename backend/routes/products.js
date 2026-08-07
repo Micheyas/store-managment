@@ -7,7 +7,7 @@ const c = require('../controllers/productController');
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
+  api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
@@ -21,11 +21,12 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-router.get('/',                    authenticateToken, c.getAll);
-router.get('/barcode/:barcode',    authenticateToken, c.getByBarcode);
-router.get('/:id',                 authenticateToken, c.getOne);
-router.post('/',                   authenticateToken, authorizeRole(['superadmin','admin']), upload.single('image'), c.create);
-router.put('/:id',                 authenticateToken, authorizeRole(['superadmin','admin']), upload.single('image'), c.update);
-router.delete('/:id',              authenticateToken, authorizeRole(['superadmin','admin']), c.remove);
+router.get('/',                 authenticateToken, c.getAll);
+router.get('/barcode/:barcode', authenticateToken, c.getByBarcode);
+router.get('/:id',              authenticateToken, c.getOne);
+// cashier can only read — write requires owner or manager
+router.post('/',   authenticateToken, authorizeRole(['owner','manager']), upload.single('image'), c.create);
+router.put('/:id', authenticateToken, authorizeRole(['owner','manager']), upload.single('image'), c.update);
+router.delete('/:id', authenticateToken, authorizeRole(['owner','manager']), c.remove);
 
 module.exports = router;

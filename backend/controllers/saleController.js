@@ -72,7 +72,7 @@ exports.getSales = async (req, res) => {
     const { branchId, dateFrom, dateTo, page = 1, limit = 50, search } = req.query;
     const where = {};
     if (branchId) where.branchId = branchId;
-    else if (req.user.role !== 'superadmin') where.branchId = req.user.branchId;
+    else if (req.user.role !== 'owner') where.branchId = req.user.branchId;
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt[Op.gte] = new Date(dateFrom);

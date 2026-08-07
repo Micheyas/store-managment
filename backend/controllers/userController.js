@@ -5,7 +5,7 @@ exports.getAll = async (req, res) => {
   try {
     const where = {};
     // non-superadmin can only see users of their branch
-    if (req.user.role !== 'superadmin') where.branchId = req.user.branchId;
+    if (req.user.role !== 'owner') where.branchId = req.user.branchId;
     const users = await User.findAll({
       where,
       attributes: { exclude: ['password'] },
