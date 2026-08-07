@@ -99,7 +99,8 @@ export default function POS() {
     w.document.close();
     w.print();
   };
-    if (cart.length === 0) return;
+
+  const handleCheckout = async () => {
     setProcessing(true); setError('');
     try {
       const res = await api.post('/sales', {
