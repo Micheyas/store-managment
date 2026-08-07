@@ -137,6 +137,13 @@ sequelize.sync({ alter: false }).then(async () => {
     console.log('✅ Seeded cashier: cashier@store.com / cashier123');
   }
 
+  // Seed demo IT
+  const it = await User.findOne({ where: { email: 'it@store.com' } });
+  if (!it) {
+    await User.create({ name: 'Demo IT', email: 'it@store.com', password: await bcrypt.hash('it123456', 10), role: 'it', branchId: branch.id, isActive: true });
+    console.log('✅ Seeded IT: it@store.com / it123456');
+  }
+
   // Seed currencies
   const currencies = [
     { code: 'ETB', name: 'Ethiopian Birr', symbol: 'Br', rate: 1,      isBase: true  },

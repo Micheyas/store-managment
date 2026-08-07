@@ -57,6 +57,7 @@ export default function Login() {
                 { role: '👑 Owner',   email: 'admin@store.com',   password: 'admin123' },
                 { role: '🔧 Manager', email: 'manager@store.com', password: 'manager123' },
                 { role: '🛒 Cashier', email: 'cashier@store.com', password: 'cashier123' },
+                { role: '🖥️ IT',      email: 'it@store.com',      password: 'it123456' },
               ].map(a => (
                 <tr key={a.email}>
                   <td>{a.role}</td>
