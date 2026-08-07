@@ -8,12 +8,17 @@ exports.getDashboard = async (req, res) => {
     const where = branchId ? { branchId } : {};
     const today = new Date(); today.setHours(0,0,0,0);
 
-    const [todaySales, totalSales, lowStockCount, pendingOrders] = await Promise.all([
+    const [todaySales, totalSales, pendingOrders] = await Promise.all([
       Sale.sum('totalAmount', { where: { ...where, status: 'completed', createdAt: { [Op.gte]: today } } }),
       Sale.count({ where: { ...where, status: 'completed' } }),
-      Stock.count({ where: { ...where, quantity: { [Op.lte]: sequelize.col('lowStockThreshold') } } }),
       PurchaseOrder.count({ where: { ...where, status: { [Op.in]: ['draft','sent','partially_received'] } } }),
     ]);
+
+    // Low stock count — fetch and filter in JS to avoid column-vs-column SQL issues
+    const allStock = await Stock.findAll({ where: branchId ? { branchId } : {} });
+    const lowStockCount = allStock.filter(s =>
+      parseFloat(s.quantity) <= parseFloat(s.lowStockThreshold || 10)
+    ).length;
 
     res.json({
       todayRevenue: todaySales || 0,

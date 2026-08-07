@@ -142,18 +142,25 @@ exports.getMovements = async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
 
-// Low stock alerts across all branches (superadmin) or one branch
+// Low stock alerts across all branches (owner) or one branch
 exports.getLowStock = async (req, res) => {
   try {
-    const branchWhere = req.user.role === 'owner' ? {} : { branchId: req.user.branchId };
+    const where = req.user.role === 'owner' ? {} : { branchId: req.user.branchId };
+
+    // Fetch all active stock entries then filter in JS — avoids column-vs-column SQL issues
     const stock = await Stock.findAll({
-      where: { ...branchWhere, quantity: { [Op.lte]: sequelize.col('lowStockThreshold') } },
+      where,
       include: [
-        { model: Product, as: 'product', where: { isActive: true } },
+        { model: Product, as: 'product', where: { isActive: true }, required: true },
         { model: Branch,  as: 'branch',  attributes: ['id', 'name'] },
       ],
       order: [['quantity', 'ASC']],
     });
-    res.json(stock);
+
+    const lowStock = stock.filter(s =>
+      parseFloat(s.quantity) <= parseFloat(s.lowStockThreshold || 10)
+    );
+
+    res.json(lowStock);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
