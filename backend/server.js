@@ -161,6 +161,73 @@ sequelize.sync({ alter: false }).then(async () => {
     await Category.findOrCreate({ where: { name } });
   }
 
+  // Seed sample products + stock
+  const { Product, Stock, Supplier } = require('./models');
+
+  const catMap = {};
+  for (const name of cats) {
+    const [c] = await Category.findOrCreate({ where: { name } });
+    catMap[name] = c.id;
+  }
+
+  // Seed a default supplier
+  const [supplier] = await Supplier.findOrCreate({
+    where: { name: 'Demo Supplier' },
+    defaults: { name: 'Demo Supplier', phone: '+251900000000', email: 'supplier@demo.com', address: 'Addis Ababa' },
+  });
+
+  const sampleProducts = [
+    // Electronics
+    { name: 'USB Charging Cable', sku: 'ELEC-001', costPrice: 50,   sellingPrice: 120,  category: 'Electronics',      unit: 'pcs', stock: 50  },
+    { name: 'Wireless Earbuds',   sku: 'ELEC-002', costPrice: 400,  sellingPrice: 850,  category: 'Electronics',      unit: 'pcs', stock: 20  },
+    { name: 'Phone Case',         sku: 'ELEC-003', costPrice: 80,   sellingPrice: 200,  category: 'Electronics',      unit: 'pcs', stock: 35  },
+    { name: 'Power Bank 10000mAh',sku: 'ELEC-004', costPrice: 550,  sellingPrice: 1200, category: 'Electronics',      unit: 'pcs', stock: 15  },
+    // Food & Beverages
+    { name: 'Bottled Water 1L',   sku: 'FOOD-001', costPrice: 8,    sellingPrice: 15,   category: 'Food & Beverages', unit: 'pcs', stock: 200 },
+    { name: 'Coca Cola 500ml',    sku: 'FOOD-002', costPrice: 18,   sellingPrice: 30,   category: 'Food & Beverages', unit: 'pcs', stock: 120 },
+    { name: 'Instant Coffee Jar', sku: 'FOOD-003', costPrice: 120,  sellingPrice: 200,  category: 'Food & Beverages', unit: 'pcs', stock: 40  },
+    { name: 'Biscuit Pack',       sku: 'FOOD-004', costPrice: 25,   sellingPrice: 45,   category: 'Food & Beverages', unit: 'pack',stock: 80  },
+    { name: 'Sugar 1kg',          sku: 'FOOD-005', costPrice: 55,   sellingPrice: 80,   category: 'Food & Beverages', unit: 'kg',  stock: 60  },
+    { name: 'Cooking Oil 1L',     sku: 'FOOD-006', costPrice: 140,  sellingPrice: 200,  category: 'Food & Beverages', unit: 'L',   stock: 45  },
+    // Health & Beauty
+    { name: 'Hand Sanitizer',     sku: 'HLTH-001', costPrice: 40,   sellingPrice: 80,   category: 'Health & Beauty',  unit: 'pcs', stock: 60  },
+    { name: 'Toothpaste',         sku: 'HLTH-002', costPrice: 35,   sellingPrice: 65,   category: 'Health & Beauty',  unit: 'pcs', stock: 55  },
+    { name: 'Body Lotion 200ml',  sku: 'HLTH-003', costPrice: 90,   sellingPrice: 160,  category: 'Health & Beauty',  unit: 'pcs', stock: 30  },
+    { name: 'Shampoo 400ml',      sku: 'HLTH-004', costPrice: 110,  sellingPrice: 200,  category: 'Health & Beauty',  unit: 'pcs', stock: 25  },
+    // Clothing
+    { name: 'Men\'s T-Shirt',     sku: 'CLTH-001', costPrice: 150,  sellingPrice: 350,  category: 'Clothing',         unit: 'pcs', stock: 40  },
+    { name: 'Women\'s Scarf',     sku: 'CLTH-002', costPrice: 80,   sellingPrice: 200,  category: 'Clothing',         unit: 'pcs', stock: 30  },
+    { name: 'Kids Socks (pair)',   sku: 'CLTH-003', costPrice: 30,   sellingPrice: 60,   category: 'Clothing',         unit: 'pcs', stock: 100 },
+    // Home & Kitchen
+    { name: 'Plastic Plates Set', sku: 'HOME-001', costPrice: 120,  sellingPrice: 250,  category: 'Home & Kitchen',   unit: 'set', stock: 20  },
+    { name: 'Stainless Mug',      sku: 'HOME-002', costPrice: 70,   sellingPrice: 150,  category: 'Home & Kitchen',   unit: 'pcs', stock: 35  },
+    { name: 'Dish Soap 500ml',    sku: 'HOME-003', costPrice: 45,   sellingPrice: 85,   category: 'Home & Kitchen',   unit: 'pcs', stock: 50  },
+    // Tools & Hardware
+    { name: 'AA Batteries (4pk)', sku: 'TOOL-001', costPrice: 40,   sellingPrice: 80,   category: 'Tools & Hardware', unit: 'pack',stock: 60  },
+    { name: 'Tape Measure 5m',    sku: 'TOOL-002', costPrice: 90,   sellingPrice: 180,  category: 'Tools & Hardware', unit: 'pcs', stock: 20  },
+  ];
+
+  let seededProducts = 0;
+  for (const p of sampleProducts) {
+    const [product, created] = await Product.findOrCreate({
+      where: { sku: p.sku },
+      defaults: {
+        name: p.name, sku: p.sku, unit: p.unit,
+        costPrice: p.costPrice, sellingPrice: p.sellingPrice,
+        categoryId: catMap[p.category], supplierId: supplier.id,
+        lowStockThreshold: 5, isActive: true,
+      },
+    });
+    if (created) {
+      await Stock.findOrCreate({
+        where: { productId: product.id, branchId: branch.id },
+        defaults: { quantity: p.stock, lowStockThreshold: 5 },
+      });
+      seededProducts++;
+    }
+  }
+  if (seededProducts > 0) console.log(`✅ Seeded ${seededProducts} sample products with stock`);
+
   console.log('✅ Initial data seeded');
   const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
