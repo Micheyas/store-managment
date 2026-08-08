@@ -16,6 +16,7 @@ import ITManagement   from './pages/ITManagement';
 import Approvals      from './pages/Approvals';
 import Expenses       from './pages/Expenses';
 import ActivityLog    from './pages/ActivityLog';
+import SalesHistory   from './pages/SalesHistory';
 import './styles/App.css';
 
 function ProtectedRoute({ children, roles }) {
@@ -40,7 +41,8 @@ function AppRoutes() {
         <Route path="pos"       element={<POS />} />
         <Route path="purchases" element={<ProtectedRoute roles={['owner','manager']}><PurchaseOrders /></ProtectedRoute>} />
         <Route path="suppliers" element={<ProtectedRoute roles={['owner','manager']}><Suppliers /></ProtectedRoute>} />
-        <Route path="reports"   element={<ProtectedRoute roles={['owner','manager']}><Reports /></ProtectedRoute>} />
+        <Route path="reports"       element={<ProtectedRoute roles={['owner','manager']}><Reports /></ProtectedRoute>} />
+        <Route path="sales-history" element={<ProtectedRoute roles={['owner','manager']}><SalesHistory /></ProtectedRoute>} />
         <Route path="settings"  element={<ProtectedRoute roles={['owner','manager']}><Settings /></ProtectedRoute>} />
         {/* Owner only */}
         <Route path="expenses"  element={<ProtectedRoute roles={['owner','manager']}><Expenses /></ProtectedRoute>} />

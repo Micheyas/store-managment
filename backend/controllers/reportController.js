@@ -1,4 +1,4 @@
-const { Sale, SaleItem, Product, Branch, Stock, PurchaseOrder, sequelize } = require('../models');
+const { Sale, SaleItem, Product, Branch, Stock, PurchaseOrder, User, sequelize } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 
 // Dashboard summary
@@ -8,23 +8,44 @@ exports.getDashboard = async (req, res) => {
     const where = branchId ? { branchId } : {};
     const today = new Date(); today.setHours(0,0,0,0);
 
-    const [todaySales, totalSales, pendingOrders] = await Promise.all([
+    const [todayRevenue, todayCount, totalSales, pendingOrders, totalProducts] = await Promise.all([
       Sale.sum('totalAmount', { where: { ...where, status: 'completed', createdAt: { [Op.gte]: today } } }),
+      Sale.count({ where: { ...where, status: 'completed', createdAt: { [Op.gte]: today } } }),
       Sale.count({ where: { ...where, status: 'completed' } }),
       PurchaseOrder.count({ where: { ...where, status: { [Op.in]: ['draft','sent','partially_received'] } } }),
+      Product.count({ where: { isActive: true } }),
     ]);
 
-    // Low stock count — fetch and filter in JS to avoid column-vs-column SQL issues
+    // Low stock count — filter in JS to avoid column-vs-column SQL issues
     const allStock = await Stock.findAll({ where: branchId ? { branchId } : {} });
     const lowStockCount = allStock.filter(s =>
       parseFloat(s.quantity) <= parseFloat(s.lowStockThreshold || 10)
     ).length;
 
+    // Recent sales (last 5)
+    const recentSales = await Sale.findAll({
+      where: { ...where, status: 'completed' },
+      include: [{ model: User, as: 'cashier', attributes: ['id','name'] }],
+      order: [['createdAt','DESC']],
+      limit: 5,
+    });
+
+    // Today's payment method breakdown
+    const todayByMethod = await Sale.findAll({
+      where: { ...where, status: 'completed', createdAt: { [Op.gte]: today } },
+      attributes: ['paymentMethod', [fn('SUM', col('totalAmount')), 'total'], [fn('COUNT', col('id')), 'count']],
+      group: ['paymentMethod'],
+    });
+
     res.json({
-      todayRevenue: todaySales || 0,
+      todayRevenue: todayRevenue || 0,
+      todayCount,
       totalSales,
       lowStockCount,
       pendingOrders,
+      totalProducts,
+      recentSales,
+      todayByMethod,
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };

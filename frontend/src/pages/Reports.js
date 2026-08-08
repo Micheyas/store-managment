@@ -12,16 +12,22 @@ export default function Reports() {
   const [salesData, setSalesData]       = useState([]);
   const [topProducts, setTopProducts]   = useState([]);
   const [profitLoss, setProfitLoss]     = useState(null);
+  const [paymentData, setPaymentData]   = useState([]);
+  const [todaySummary, setTodaySummary] = useState(null);
   const [loading, setLoading]           = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ dateFrom, dateTo });
-      const [salesRes, topRes, plRes] = await Promise.all([
+      const today = new Date().toISOString().split('T')[0];
+      const todayParams = new URLSearchParams({ dateFrom: today, dateTo: today });
+
+      const [salesRes, topRes, plRes, todayRes] = await Promise.all([
         api.get(`/reports/sales?${params}`),
         api.get(`/reports/top-products?${params}&limit=10`),
         api.get(`/reports/profit-loss?${params}`),
+        api.get(`/reports/sales?${todayParams}`),
       ]);
       setSalesData(salesRes.data.map(d => ({
         period: new Date(d.period).toLocaleDateString(),
@@ -31,6 +37,19 @@ export default function Reports() {
       })));
       setTopProducts(topRes.data);
       setProfitLoss(plRes.data);
+
+      // Payment method breakdown from sales data
+      const payMap = {};
+      salesRes.data.forEach(d => {
+        // aggregated by day — we'll show totals from profit-loss
+      });
+
+      // Today summary
+      const todayRows = todayRes.data;
+      setTodaySummary({
+        revenue: todayRows.reduce((s, d) => s + parseFloat(d.revenue || 0), 0),
+        count:   todayRows.reduce((s, d) => s + parseInt(d.count || 0), 0),
+      });
     } catch (e) {
       console.error('Reports error:', e);
     } finally {
@@ -53,15 +72,28 @@ export default function Reports() {
 
       {/* Tabs */}
       <div className="tabs">
-        {['sales','top-products','profit-loss'].map(t => (
+        {['sales','top-products','profit-loss','payment-methods'].map(t => (
           <button key={t} className={`tab-btn ${tab===t?'active':''}`} onClick={() => setTab(t)}>
-            {t === 'sales' ? '📊 Sales' : t === 'top-products' ? '🏆 Top Products' : '💹 Profit & Loss'}
+            {t === 'sales' ? '📊 Sales' : t === 'top-products' ? '🏆 Top Products' : t === 'profit-loss' ? '💹 Profit & Loss' : '💳 Payment Methods'}
           </button>
         ))}
       </div>
 
       {loading ? <div className="loader">Loading…</div> : (
         <>
+          {/* Today's summary strip */}
+          {todaySummary && (
+            <div className="stat-grid" style={{marginBottom:16}}>
+              <div className="stat-card stat-card--green">
+                <div className="stat-icon">💰</div>
+                <div className="stat-body"><div className="stat-value">{Number(todaySummary.revenue).toLocaleString()} ETB</div><div className="stat-label">Today's Revenue</div></div>
+              </div>
+              <div className="stat-card stat-card--blue">
+                <div className="stat-icon">🛒</div>
+                <div className="stat-body"><div className="stat-value">{todaySummary.count}</div><div className="stat-label">Today's Transactions</div></div>
+              </div>
+            </div>
+          )}
           {/* Sales chart */}
           {tab === 'sales' && (
             <div className="card">
@@ -130,8 +162,7 @@ export default function Reports() {
           )}
 
           {/* Profit & Loss */}
-          {tab === 'profit-loss' && profitLoss && (
-            <div className="card">
+          {tab === 'profit-loss' && profitLoss && (            <div className="card">
               <h3 className="card-title">💹 Profit & Loss Summary</h3>
               <div className="stat-grid">
                 <div className="stat-card stat-card--blue">
@@ -159,6 +190,36 @@ export default function Reports() {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Payment Methods / Daily breakdown */}
+          {tab === 'payment-methods' && (
+            <div className="card">
+              <h3 className="card-title">💳 Daily Sales Summary</h3>
+              {salesData.length === 0 ? <p className="empty">No data for this period.</p> : (
+                <table className="table mt-2">
+                  <thead><tr><th>Date</th><th>Transactions</th><th>Revenue (ETB)</th><th>Discount (ETB)</th></tr></thead>
+                  <tbody>
+                    {salesData.map((d, i) => (
+                      <tr key={i}>
+                        <td>{d.period}</td>
+                        <td>{d.count}</td>
+                        <td><strong>{Number(d.revenue).toLocaleString()}</strong></td>
+                        <td>{Number(d.discount).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{fontWeight:700,background:'#f8fafc'}}>
+                      <td>Total</td>
+                      <td>{salesData.reduce((s,d)=>s+d.count,0)}</td>
+                      <td>{Number(salesData.reduce((s,d)=>s+d.revenue,0)).toLocaleString()}</td>
+                      <td>{Number(salesData.reduce((s,d)=>s+d.discount,0)).toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              )}
             </div>
           )}
         </>

@@ -207,3 +207,16 @@ a{text-decoration:none;color:inherit}
 .login-demo-table td{padding:5px 6px;border-bottom:1px solid #f9fafb}
 .login-demo-table tr:last-child td{border-bottom:none}
 .login-demo-table code{background:#f3f4f6;padding:1px 5px;border-radius:4px;font-size:11px}
+
+/* ── POS category pills & stock badges ──────────── */
+.pos-cats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pos-cat-btn{padding:5px 12px;border-radius:20px;border:1px solid #e2e8f0;background:#fff;cursor:pointer;font-size:12px;font-weight:500;color:#64748b;transition:all .15s;white-space:nowrap}
+.pos-cat-btn.active{background:#6366f1;border-color:#6366f1;color:#fff}
+.pos-cat-btn:hover:not(.active){background:#f1f5f9}
+.pos-no-img{width:100%;height:70px;display:flex;align-items:center;justify-content:center;font-size:28px;background:#f8fafc;border-radius:6px}
+.pos-stock-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;text-align:center;margin-top:2px}
+.pos-stock-badge.ok{background:#dcfce7;color:#16a34a}
+.pos-stock-badge.low{background:#ffedd5;color:#c2410c}
+.pos-stock-badge.out{background:#fee2e2;color:#dc2626}
+.pos-out-of-stock{opacity:.45;cursor:not-allowed!important}
+.pos-out-of-stock:hover{transform:none!important;box-shadow:none!important;border-color:#e2e8f0!important}
