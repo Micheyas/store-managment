@@ -143,13 +143,14 @@ export default function Products() {
       {error && <div className="alert alert-error">{error}</div>}
 
       {/* Table — keep showing existing data while loading (no full-page spinner) */}
-      <div className="card" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+      <div className="card">
         {loading && products.length === 0 && <div className="loader">Loading…</div>}
         {(!loading || products.length > 0) && (
           <table className="table">
             <thead>
               <tr>
-                <th>Image</th><th>Name</th><th>SKU</th><th>Category</th>
+                <th style={{width:60}}>Image</th>
+                <th>Name</th><th>SKU</th><th>Category</th>
                 <th>Cost</th><th>Price</th><th>Stock</th>
                 {canEdit && <th>Actions</th>}
               </tr>
@@ -159,7 +160,7 @@ export default function Products() {
                 <tr><td colSpan={canEdit ? 8 : 7} className="empty">No products found.</td></tr>
               ) : products.map(p => (
                 <tr key={p.id}>
-                  <td>
+                  <td style={{width:60}}>
                     <img
                       src={p.image || '/placeholder.png'}
                       alt={p.name}
