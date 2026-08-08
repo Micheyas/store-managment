@@ -233,6 +233,12 @@ sequelize.sync({ alter: false }).then(async () => {
   if (seededProducts > 0) console.log(`✅ Seeded ${seededProducts} sample products with stock`);
 
   console.log('✅ Initial data seeded');
+
+  // ── Auto-refresh exchange rates on startup + every 6 hours ──────────────
+  const { refreshRates } = require('./routes/currency');
+  refreshRates(false); // run immediately on startup (non-blocking)
+  setInterval(() => refreshRates(true), 6 * 60 * 60 * 1000); // repeat every 6h
+
   const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 });

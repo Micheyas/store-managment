@@ -171,23 +171,15 @@ export default function Settings() {
       {tab === 'currencies' && (
         <div className="card">
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <h3 style={{margin:0}}>💱 Exchange Rates (vs ETB)</h3>
-            <button
-              className="btn btn-primary"
-              onClick={async () => {
-                setError('');
-                try {
-                  const r = await api.post('/currency/refresh-rates');
-                  alert(`✅ ${r.data.message}\nLast updated: ${r.data.timestamp}`);
-                  fetchAll();
-                } catch(e) { setError(e.response?.data?.error || 'Failed to fetch live rates'); }
-              }}
-            >
-              🔄 Fetch Live Rates
-            </button>
+            <div>
+              <h3 style={{margin:0}}>💱 Exchange Rates (vs ETB)</h3>
+              <p style={{fontSize:12,color:'#9ca3af',marginTop:4}}>
+                🔄 Rates auto-refresh every 6 hours from live market data
+              </p>
+            </div>
           </div>
           <table className="table mt-2">
-            <thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Rate (per 1 ETB)</th><th>Base</th><th>Manual Update</th></tr></thead>
+            <thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Rate (per 1 ETB)</th><th>Base</th><th>Manual Override</th></tr></thead>
             <tbody>{currencies.map(c => (
               <tr key={c.id}>
                 <td><strong>{c.code}</strong></td>
@@ -195,7 +187,7 @@ export default function Settings() {
                 <td>{c.symbol}</td>
                 <td>{Number(c.rate).toFixed(6)}</td>
                 <td>{c.isBase ? '✅' : ''}</td>
-                <td><RateInput id={c.id} defaultRate={c.rate} onSave={handleUpdateRate} /></td>
+                <td>{c.isBase ? '—' : <RateInput id={c.id} defaultRate={c.rate} onSave={handleUpdateRate} />}</td>
               </tr>
             ))}</tbody>
           </table>
