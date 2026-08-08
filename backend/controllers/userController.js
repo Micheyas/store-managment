@@ -52,3 +52,13 @@ exports.remove = async (req, res) => {
     res.json({ message: 'User deactivated' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
+exports.destroy = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+    await user.destroy();
+    res.json({ message: 'User permanently deleted' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+};
