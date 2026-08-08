@@ -11,9 +11,14 @@ const authenticateToken = (req, res, next) => {
 };
 
 const authorizeRole = (roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
+  // Map legacy role names to new ones for backward compatibility with old JWTs
+  const roleMap = { superadmin: 'owner', admin: 'manager', warehouse: 'manager' };
+  const role = roleMap[req.user.role] || req.user.role;
+  if (!roles.includes(role)) {
     return res.status(403).json({ error: 'Insufficient permissions' });
   }
+  // Normalize the role on the request object so controllers see the new name
+  req.user.role = role;
   next();
 };
 
