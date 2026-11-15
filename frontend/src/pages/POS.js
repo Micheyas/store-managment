@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../api';
 import { useAuth } from '../AuthContext';
 
@@ -17,14 +17,37 @@ export default function POS() {
   const [processing, setProcessing] = useState(false);
   const [lastSale, setLastSale]   = useState(null);
   const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState('');
   const barcodeRef = useRef(null);
 
-  useEffect(() => {
-    api.get('/products?limit=500').then(r => setProducts(r.data.products || []));
-    api.get('/categories').then(r => setCategories(r.data));
-    api.get('/currency').then(r => setCurrencies(r.data));
-    barcodeRef.current?.focus();
+  // Load products with retry — the backend sleeps when idle and can take
+  // up to a minute to wake, so a failed/slow first request must not leave
+  // the grid stuck on "No products found."
+  const loadProducts = useCallback(async () => {
+    setLoading(true); setLoadError('');
+    let lastErr = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const r = await api.get('/products?limit=500');
+        setProducts(r.data.products || []);
+        setLoading(false);
+        return;
+      } catch (e) {
+        lastErr = e;
+        if (attempt < 3) await new Promise(res => setTimeout(res, 3000 * (attempt + 1)));
+      }
+    }
+    setLoading(false);
+    setLoadError(lastErr?.response?.data?.error || 'Could not load products. The server may be waking up — please retry.');
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+    api.get('/categories').then(r => setCategories(r.data)).catch(() => {});
+    api.get('/currency').then(r => setCurrencies(r.data)).catch(() => {});
+    barcodeRef.current?.focus();
+  }, [loadProducts]);
 
   const filteredProducts = products.filter(p => {
     const matchCat  = !catFilter || String(p.categoryId) === String(catFilter);
@@ -174,8 +197,15 @@ export default function POS() {
 
         {/* Product grid */}
         <div className="pos-grid">
-          {filteredProducts.length === 0
-            ? <div style={{gridColumn:'1/-1',textAlign:'center',color:'#9ca3af',padding:40}}>No products found.</div>
+          {loading
+            ? <div style={{gridColumn:'1/-1',textAlign:'center',color:'#9ca3af',padding:40}}>⏳ Loading products…<br/><span style={{fontSize:13}}>The first load can take up to a minute while the server wakes up.</span></div>
+            : loadError
+            ? <div style={{gridColumn:'1/-1',textAlign:'center',color:'#9ca3af',padding:40}}>
+                ⚠️ {loadError}<br/>
+                <button className="btn btn-primary" style={{marginTop:12}} onClick={loadProducts}>🔄 Retry</button>
+              </div>
+            : filteredProducts.length === 0
+            ? <div style={{gridColumn:'1/-1',textAlign:'center',color:'#9ca3af',padding:40}}>{products.length === 0 ? 'No products found.' : 'No products match your search.'}</div>
             : filteredProducts.map(p => {
               const stock = getStock(p);
               const outOfStock = stock !== null && stock <= 0;
